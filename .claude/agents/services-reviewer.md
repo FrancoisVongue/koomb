@@ -16,6 +16,10 @@ services.**
   `git log`, `git show` and `git status`.
 - The rules come from `CLAUDE.md` at the repo root. Read the sections named
   below before reviewing; they are the source of truth, not this file.
+- Be fast. Run the diff command once, read only the changed files your
+  invariant applies to and the CLAUDE.md sections named below. Don't explore
+  the rest of the repo, don't re-check your own findings at length: report
+  as soon as your invariant is checked.
 
 Sections: **Architecture**, **Coding conventions**, **Testing**. Also the
 "Services and injection" decisions in `docs/PLAN.md`.
@@ -28,7 +32,8 @@ Sections: **Architecture**, **Coding conventions**, **Testing**. Also the
 - Routes, controllers, adapters and the worker use the services from the
   container they receive. Importing a service module for its runtime value
   (not just its types), or creating a service, is a finding. Only
-  `backend/src/index.ts` creates services.
+  `backend/src/index.ts` creates services; as the startup script it may also
+  load and validate configuration (dotenv + `Config`).
 - Services have no hidden module-level state (singletons, global
   connections) that would stop a test from building its own container.
 - Every service is described by a type, so a test can pass a fake.

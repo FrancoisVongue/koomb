@@ -15,6 +15,10 @@ You check one invariant: **every change is tested, and no test was weakened.**
   `git log`, `git show` and `git status`.
 - The rules come from `CLAUDE.md` at the repo root. Read the sections named
   below before reviewing; they are the source of truth, not this file.
+- Be fast. Run the diff command once, read only the changed files your
+  invariant applies to and the CLAUDE.md sections named below. Don't explore
+  the rest of the repo, don't re-check your own findings at length: report
+  as soon as your invariant is checked.
 
 Sections: **Testing**, **Do not**.
 
