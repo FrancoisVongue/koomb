@@ -6,8 +6,13 @@ import { and, count, desc, eq, getTableColumns, inArray, lt, sql } from 'drizzle
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { venum } from 'venum';
-import { type Link, type Page, Pagination } from '../../models/pages/types.ts';
-import type { ScrapedPage, ScrapeFailure } from '../../models/scrape/types.ts';
+import type { Link } from '../../models/links/types.ts';
+import {
+  type Page,
+  Pagination,
+  type ScrapedPage,
+  type ScrapeFailure,
+} from '../../models/pages/types.ts';
 import * as schema from './schema.ts';
 
 const { pages, links } = schema;

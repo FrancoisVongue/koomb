@@ -25,11 +25,17 @@ Sections: **Folder map**, **Coding conventions** (feature grouping), **Testing**
 
 ## Check
 
-- Feature code lives in `backend/src/models/<model>/` (`routes.ts`,
-  `controller.ts`, `types.ts`, `adapter.ts`), not directly in `models/`.
+- Model code lives in `backend/src/models/<model>/` (`routes.ts`,
+  `controller.ts`, `types.ts`, `adapter.ts`), not directly in `models/`. A
+  model is a thing (pages, links); a use case is a controller function, not
+  a folder.
+- The entrances are `backend/src/app.ts` (HTTP) and `backend/src/cron.ts`
+  (time). A new way of invoking the app is a new entrance next to them, not a
+  model or a service.
 - No folders by technical layer (`controllers/`, `repositories/`, …).
   `services/` is the one exception and holds only shared infrastructure
-  (all I/O: database, page fetcher, events, cron, clock), never feature logic.
+  (all I/O: database, page fetcher, events, scheduler, background, clock),
+  never business logic.
   `lib/` holds only pure wrappers over third-party libraries (no I/O).
 - `shared/` holds only types used by **both** frontend and backend, plus their
   pure functions. Anything used by one side only does not belong there.

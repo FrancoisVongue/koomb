@@ -48,7 +48,6 @@ export const fakeScheduler = () => {
     };
   };
   return {
-    cron: ((_expression, task) => add(task)) satisfies Scheduler['cron'],
     interval: ((_ms, task) => add(task)) satisfies Scheduler['interval'],
     active: () => tasks.size,
     tick: async () => {

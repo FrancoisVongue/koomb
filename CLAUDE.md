@@ -9,16 +9,27 @@ a part.
 
 ## Architecture
 
-    HTTP route -> controller -> business logic + services (db/etc)
-    add URL    -> page saved as "in progress" -> background job
-               -> fetch page -> parse links -> save -> page marked done
+    entrances:  app.ts (HTTP, by clients)   cron.ts (by time)
+                      |                            |
+                   routes                          |
+                      +------> controllers <-------+
+                               (use cases on a model; may call other controllers)
+                                 |            |
+                    business logic (types)   services (db, fetcher, events…)
 
+    add URL -> page saved as "queued" -> scraped in the background
+            -> fetch page -> parse links -> save -> page marked done
+
+- Models are the things (pages, links). What we do with them, the use cases,
+  are controller functions. There are two entrances that invoke them: HTTP
+  (`app.ts` → routes) and time (`cron.ts`). Entrances are not services.
 - A request never waits for scraping.
 - The database is the single source of truth, including page status.
-- Everything external or async (database, page fetcher, events, cron, clock)
-  is a service. `backend/src/index.ts` creates all services once, in one typed
-  container (`Services`), and passes it to routes, from routes to
-  controllers, and to the worker. Nothing else imports or creates a service.
+- Everything external or async that controllers use (database, page fetcher,
+  events, background, clock) is a service. `backend/src/index.ts` creates all
+  services once, in one typed container (`Services`), and passes it to both
+  entrances, and from them to controllers. Nothing else imports or creates a
+  service.
 - Stack and architecture decisions are recorded in `docs/PLAN.md`. Do not make
   new ones yourself.
 
@@ -32,7 +43,7 @@ backend/
   .env.example
   src/
     models/
-      <model>/            # one folder per feature: pages (HTTP API), scrape (background job)
+      <model>/            # one folder per model: pages, links
         routes.ts
         controller.ts
         types.ts          # types + their pure functions
@@ -42,9 +53,10 @@ backend/
       testing.ts          # fake services for tests; never imported by app code
       database/           # schema.ts, queries (index.ts), generated migrations/
     lib/                  # pure wrappers over third-party libraries (HTML parser); no I/O
-    app.ts                # Express app: routes and error handler (tests start it too)
+    app.ts                # entrance 1, HTTP: Express app, routes, error handler (tests start it too)
+    cron.ts               # entrance 2, time: runs the sweep every 10 s
     config.ts             # environment variables, parsed
-    index.ts              # creates the Services container, starts server and worker
+    index.ts              # creates the Services container, starts both entrances
 e2e/                      # end-to-end tests (not used yet)
 docs/                     # TASK.md, PLAN.md, sessions/
 Dockerfile, compose.yaml  # local testing only (see README)
@@ -109,10 +121,11 @@ Run from the repo root.
 - `shared/` contains only types used by both frontend and backend, plus their
   namespaces of pure functions. If it is not shared, it does not go in
   `shared/`.
-- Code is grouped by feature, not by technical layer. We use hexagonal
+- Code is grouped by model, not by technical layer. We use hexagonal
   architecture, so do not create top-level folders such as `controllers/` or
   `repositories/` (`services/` is the one exception: shared infrastructure).
-  Controllers are managers of both services and business logic.
+  Controllers are managers of both services and business logic; a
+  controller may call another model's controller (e.g. pages → links).
   Business logic is defined in types.
   A service is an external program/process that we use to do certain functions.
 - Use venum for complete handling of errors (pre-approved dependency; read its

@@ -34,6 +34,8 @@ Sections: **Architecture**, **Coding conventions**, **Testing**. Also the
   (not just its types), or creating a service, is a finding. Only
   `backend/src/index.ts` creates services; as the startup script it may also
   load and validate configuration (dotenv + `Config`).
+- The entrances `app.ts` (Express) and `cron.ts` (node-cron) may use their
+  own framework directly; they are not services.
 - Services have no hidden module-level state (singletons, global
   connections) that would stop a test from building its own container.
 - Every service is described by a type, so a test can pass a fake.

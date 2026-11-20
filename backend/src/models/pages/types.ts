@@ -1,5 +1,8 @@
 import type { Api } from 'shared';
-import { venum } from 'venum';
+import { match, venum } from 'venum';
+import { Html } from '../../lib/html.ts';
+import type { PageFetcher } from '../../services/fetcher.ts';
+import { Link } from '../links/types.ts';
 
 export type Page = {
   id: number;
@@ -33,21 +36,6 @@ export namespace Page {
   export const toEvent = (page: Page): Api.PageUpdatedEvent => ({
     id: page.id,
     status: page.status,
-  });
-}
-
-export type Link = {
-  id: number;
-  pageId: number;
-  href: string;
-  name: string;
-};
-
-export namespace Link {
-  export const toApi = (link: Link): Api.Link => ({
-    id: link.id,
-    href: link.href,
-    name: link.name,
   });
 }
 
@@ -148,4 +136,55 @@ export namespace PageDetailQuery {
     if (links.tag === 'invalid') return links;
     return venum('ok', { id: id.data, links: links.data } satisfies PageDetailQuery);
   };
+}
+
+/** What we keep from a scraped page: its title and its links. */
+export type ScrapedPage = { title: string | null; links: Link.Scraped[] };
+
+export namespace ScrapedPage {
+  export const fromHtml = (html: string, pageUrl: string): ScrapedPage => {
+    const parsed = Html.parse(html);
+    const links = Link.fromAnchors(parsed.anchors, parsed.baseHref, pageUrl);
+    return { title: parsed.title, links };
+  };
+}
+
+/** Why fetching a page failed, and whether to try again. */
+export namespace ScrapeFailure {
+  /** What is recorded after a failed attempt. */
+  export type Outcome = { error: string; retry: boolean };
+
+  export const describe = (failure: PageFetcher.Failure): string =>
+    match(failure, {
+      timeout: ({ timeoutMs }) => `The page did not answer within ${timeoutMs / 1000} s`,
+      unreachable: ({ reason }) => `The page could not be reached (${reason})`,
+      badStatus: ({ status }) => `The page answered with HTTP ${status}`,
+      notHtml: ({ contentType }) => `Not an HTML page (${contentType || 'no content type'})`,
+      tooLarge: ({ maxBytes }) => `The page is larger than ${maxBytes / (1024 * 1024)} MB`,
+      blocked: ({ hostname }) => `${hostname} is a private or local address`,
+      tooManyRedirects: ({ maxRedirects }) => `More than ${maxRedirects} redirects`,
+    });
+
+  /** Failures that may go away on their own: worth another attempt. */
+  export const isTemporary = (failure: PageFetcher.Failure): boolean =>
+    match(failure, {
+      timeout: () => true,
+      unreachable: () => true,
+      badStatus: ({ status }) => status >= 500 || status === 429,
+      _: () => false,
+    });
+
+  /** What to record after a failed attempt on `page`. */
+  export const outcome = (failure: PageFetcher.Failure, page: Page): Outcome => ({
+    error: describe(failure),
+    retry: isTemporary(failure) && page.attempts < Page.MAX_ATTEMPTS,
+  });
+}
+
+/** The safety net that cron.ts runs: stuck and queued pages. */
+export namespace Sweep {
+  export const STUCK_AFTER_MS = 2 * 60 * 1000;
+  export const BATCH_SIZE = 5;
+
+  export const stuckBefore = (now: Date): Date => new Date(now.getTime() - STUCK_AFTER_MS);
 }

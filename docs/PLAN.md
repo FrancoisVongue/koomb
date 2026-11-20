@@ -34,9 +34,15 @@ is implemented.
 
 - **Decision:** route → controller → business logic (types) + services.
   - *Why:* controllers read as the user story; HTTP stays in routes.
-- **Decision:** code grouped by feature (`backend/src/models/<model>/`),
-  hexagonal style; `services/` is the only shared infrastructure folder.
-  - *Why:* a feature can be read in one place.
+- **Decision:** code grouped by model (`backend/src/models/<model>/`:
+  pages, links), hexagonal style; the use cases are controller functions,
+  and controllers may call each other. `services/` is the only shared
+  infrastructure folder.
+  - *Why:* a model and everything done with it can be read in one place.
+- **Decision:** two entrances invoke the use cases: `app.ts` (HTTP, by
+  clients) and `cron.ts` (by time). They are not services. Changed while
+  building: the background job first was a `models/scrape/` "feature".
+  - *Why:* reads like what it is: two ways the app is told what to do.
 
 #### Conventions
 
@@ -206,8 +212,8 @@ Built in this order; each one ships with its unit tests.
 
 #### Services and injection
 
-- **Decision:** everything external or async (database, page fetcher, events,
-  cron, clock) is a service. Services are created once, in
+- **Decision:** everything external or async that controllers use (database,
+  page fetcher, events, background, clock) is a service. Services are created once, in
   `backend/src/index.ts`, into one typed container (`Services`), and passed to
   routes, from routes to controllers, and to the worker. Nothing else imports
   or creates a service.

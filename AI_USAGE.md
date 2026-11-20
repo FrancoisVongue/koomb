@@ -85,6 +85,18 @@ did several things. I asked for one step per line with named variables and no
 log now includes the request, and the rule is in CLAUDE.md and the controller
 reviewer.
 
+### 7. A "scrape" model that wasn't a model
+
+Claude put the background job in `models/scrape/`, treating it as a feature
+folder next to `models/pages/`, and ran the cron schedule through a
+`scheduler` service. But models are things (pages, links); what we do with
+them are use cases, i.e. controller functions, and controllers may call each
+other. I asked for `models/pages/` and `models/links/`, with the scraping use
+cases in the pages controller, and for `cron.ts` next to `index.ts`: cron is
+a second entrance into the app (by time), like HTTP is (by clients), not a
+service used inside controllers. The code was restructured that way, and
+CLAUDE.md, PLAN.md and the structure and services reviewers now describe it.
+
 ## What I wrote or rewrote by hand
 
 <!-- e.g. CLAUDE.md, docs/PLAN.md decisions. -->

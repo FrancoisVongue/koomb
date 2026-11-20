@@ -2,8 +2,9 @@ import { type Response, Router } from 'express';
 import type { Api } from 'shared';
 import { match } from 'venum';
 import type { Services } from '../../services/index.ts';
+import { Link } from '../links/types.ts';
 import { addPage, getPage, listPages } from './controller.ts';
-import { AddPageInput, Link, Page, PageDetailQuery, Pagination } from './types.ts';
+import { AddPageInput, Page, PageDetailQuery, Pagination } from './types.ts';
 
 const HEARTBEAT_MS = 20_000;
 
