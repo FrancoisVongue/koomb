@@ -1,3 +1,4 @@
+import type { Config } from '../config.ts';
 import { type Background, createBackground } from './background.ts';
 import { type Clock, createClock } from './clock.ts';
 import { createDatabase, type Database } from './database/index.ts';
@@ -15,9 +16,9 @@ export type Services = {
   clock: Clock;
 };
 
-export const createServices = (config: { databaseFile: string }): Services => ({
+export const createServices = (config: Config): Services => ({
   db: createDatabase(config.databaseFile),
-  fetcher: createPageFetcher(DEFAULT_FETCHER_OPTIONS),
+  fetcher: createPageFetcher({ ...DEFAULT_FETCHER_OPTIONS, delayMs: config.scrapeDelayMs }),
   events: createEvents(),
   scheduler: createScheduler(),
   background: createBackground(),

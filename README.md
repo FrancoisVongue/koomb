@@ -18,6 +18,12 @@ npm run dev      # runs backend + frontend; open http://localhost:3033
 
 The Vite dev server proxies `/api/*` to the backend.
 
+**Scraping is slowed down on purpose in development.** `npm run dev` waits
+3 seconds before fetching each page (`SCRAPE_DELAY_MS=3000`). Most pages are
+scraped in well under a second, so without the delay the "in progress" status
+is never visible. We decided to keep it that way. Set `SCRAPE_DELAY_MS=0` in
+`backend/.env` to turn it off; `npm start` and the tests don't use it.
+
 ```sh
 npm run typecheck   # tsc --noEmit in both workspaces
 ```

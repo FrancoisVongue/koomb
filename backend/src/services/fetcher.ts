@@ -1,5 +1,6 @@
 import { lookup } from 'node:dns/promises';
 import { BlockList, isIP } from 'node:net';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { venum } from 'venum';
 
 export type FetcherOptions = {
@@ -8,6 +9,8 @@ export type FetcherOptions = {
   maxRedirects: number;
   /** Only for tests against a local server. */
   allowPrivateAddresses: boolean;
+  /** Artificial wait before each fetch, to see "in progress" in development. */
+  delayMs?: number;
 };
 
 export const DEFAULT_FETCHER_OPTIONS: FetcherOptions = {
@@ -40,6 +43,10 @@ export const createPageFetcher = (
  * through the private-address check.
  */
 const fetchPage = async (url: string, options: FetcherOptions) => {
+  if (options.delayMs) {
+    await sleep(options.delayMs);
+  }
+
   const signal = AbortSignal.timeout(options.timeoutMs);
   let current = url;
 
