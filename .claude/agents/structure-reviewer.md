@@ -25,7 +25,8 @@ Sections: **Folder map**, **Coding conventions** (feature grouping), **Testing**
   `controller.ts`, `types.ts`, `adapter.ts`), not directly in `models/`.
 - No folders by technical layer (`controllers/`, `repositories/`, …).
   `services/` is the one exception and holds only shared infrastructure
-  (database, job queue, HTTP fetching), never feature logic.
+  (all I/O: database, page fetcher, events, cron, clock), never feature logic.
+  `lib/` holds only pure wrappers over third-party libraries (no I/O).
 - `shared/` holds only types used by **both** frontend and backend, plus their
   pure functions. Anything used by one side only does not belong there.
 - Unit tests sit next to the file they test (`*.test.ts`); there is no unit

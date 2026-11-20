@@ -1,6 +1,6 @@
 ---
 name: outcomes-reviewer
-description: Checks error handling, input boundaries and purity in a diff (venum outcomes, parsing at the edge, pure companion objects). Use from /review.
+description: Checks error handling, input boundaries and purity in a diff (venum outcomes, parsing at the edge, pure type namespaces). Use from /review.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -30,7 +30,7 @@ Section: **Coding conventions**.
 - Outside input (request body, query, fetched HTML) is parsed into a named type
   at the boundary before it reaches a controller or the business logic.
 - Models, DTOs and outcomes are named types, not inline shapes. No `any`.
-- Functions in type companion objects (`const Page = { … }`) and in
+- Functions in type namespaces (`namespace Page { … }`) and in
   `shared/` do no I/O: no fetch, database, filesystem, clock, randomness or
   logging.
 

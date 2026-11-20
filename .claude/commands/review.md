@@ -1,5 +1,5 @@
 ---
-description: Run the five invariant reviewers in parallel on the diff about to be committed
+description: Run the six invariant reviewers in parallel on the diff about to be committed
 argument-hint: "[git ref to diff against, default: staged changes]"
 ---
 
@@ -14,9 +14,9 @@ anything.**
 
 ## 2. Run the agents in parallel
 
-In a single message, launch these five subagents, one call each:
+In a single message, launch these six subagents, one call each:
 `structure-reviewer`, `controller-reviewer`, `consistency-reviewer`,
-`outcomes-reviewer`, `tests-reviewer`.
+`outcomes-reviewer`, `tests-reviewer`, `services-reviewer`.
 
 - Give each one the same prompt: the diff command from step 1, and
   "Review this diff for your invariant."

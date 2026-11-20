@@ -28,7 +28,7 @@
         "noExplicitAny": "error"
       },
       "style": {
-        "noNamespace": "error"
+        "noNamespace": "off"
       },
       "nursery": {
         "noFloatingPromises": "error",

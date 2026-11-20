@@ -27,7 +27,7 @@ Only `controller.ts` files in the diff (return `N/A` if there are none).
 - Reading the controller top to bottom tells the user story: short, named
   steps (`Page.parse(…)`, `pages.save(…)`), no low-level detail.
 - Complex logic around service calls is in `adapter.ts`; pure logic is in the
-  type's companion object. Loops, string handling, SQL, HTML parsing or long
+  type's namespace. Loops, string handling, SQL, HTML parsing or long
   conditionals inside a controller are findings.
 - Outcomes are returned as `venum` values for the route to `match`.
 

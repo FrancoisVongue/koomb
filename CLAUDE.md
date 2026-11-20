@@ -15,8 +15,12 @@ a part.
 
 - A request never waits for scraping.
 - The database is the single source of truth, including page status.
-- Database and job queue are not chosen yet. Do not pick them yourself; the
-  choice is recorded in `docs/PLAN.md` first. Same with other decisions about the project.
+- Everything external or async (database, page fetcher, events, cron, clock)
+  is a service. `backend/src/index.ts` creates all services once, in one typed
+  container (`Services`), and passes it to routes, from routes to
+  controllers, and to the worker. Nothing else imports or creates a service.
+- Stack and architecture decisions are recorded in `docs/PLAN.md`. Do not make
+  new ones yourself.
 
 ## Folder map
 
@@ -31,8 +35,9 @@ backend/
         controller.ts
         types.ts          # types + their pure functions
         adapter.ts        # complex logic around service calls (when needed)
-    services/             # shared infrastructure: database, job queue, HTTP fetching
-    index.ts
+    services/             # all I/O: database, page fetcher, events, cron, clock
+    lib/                  # pure wrappers over third-party libraries (HTML parser); no I/O
+    index.ts              # creates the Services container, starts server and worker
 e2e/                      # end-to-end tests
 docs/                     # TASK.md, PLAN.md, sessions/
 ```
@@ -55,6 +60,10 @@ to run; do not invent commands.
 - TypeScript, strict. No `any`.
 - Routes own HTTP: parse input, call the controller, map the result to a
   response. Controllers never receive `req` or `res`.
+- Controllers, adapters and the worker get their services from the container
+  they are given. They never call `fetch`, the database, timers or other I/O
+  directly, and never import a service module (only its types). A new external
+  dependency means a new service, or a method on an existing one.
 - Controllers read as the user story (important!); this should be the most
   readable part of the code. Logic that talks to the outside world lives in
   `services/`. If calling a service needs complex logic, it goes in
@@ -70,22 +79,21 @@ to run; do not invent commands.
   `docs/PLAN.md` when the scraping part is planned.
 - Outside input (request body, query, fetched HTML) is parsed into a named type
   at the boundary. Models, DTOs and outcomes are named types, not inline shapes.
-- Pure functions (parsing, transforms) do no I/O. They live next to their type,
-  in a companion object with the same name, so code reads as
+- Pure functions (parsing, transforms) do no I/O. They are defined on types, in
+  a namespace with the same name as the type, so code reads as
   `TypeX.action(x, ...args)` and it is clear which method you call and that it
-  is pure:
+  is pure. Related types go in the same namespace (`Page.Status`):
 
   ```ts
-  export type Page = { title: string; links: Link[] };
-  export const Page = {
-    linkCount: (page: Page): number => page.links.length,
-  };
+  export type Page = { url: string; status: Page.Status; links: Link[] };
+  export namespace Page {
+    export type Status = 'queued' | 'processing' | 'done' | 'failed';
+    export const linkCount = (page: Page): number => page.links.length;
+  }
   ```
-
-  Do not use the TypeScript `namespace` keyword for this (lint rule
-  `no-namespace`, and not supported by Node type stripping).
 - `shared/` contains only types used by both frontend and backend, plus their
-  pure functions. If it is not shared, it does not go in `shared/`.
+  namespaces of pure functions. If it is not shared, it does not go in
+  `shared/`.
 - Code is grouped by feature, not by technical layer. We use hexagonal
   architecture, so do not create top-level folders such as `controllers/` or
   `repositories/` (`services/` is the one exception: shared infrastructure).
@@ -104,6 +112,8 @@ to run; do not invent commands.
   separate folder for unit tests.
 - Pure functions are tested directly on fixtures.
 - Routes are tested through HTTP, not by calling controllers.
+- Controllers and the worker are tested with a container of fake services.
+  Substitute services through the container; no `vi.mock` of service modules.
 - End-to-end tests live in `e2e/`.
 - Tests never touch the real internet: use HTML fixtures or a local server.
 - Tools are added here once chosen.
@@ -114,11 +124,14 @@ to run; do not invent commands.
    my review.
 2. Build one part at a time. Small commits, one meaning each.
 3. Commit only after my explicit approval or when I ask.
-4. Run lint and tests before calling a task done; say plainly if something
+4. Before committing, run `/review` on the staged changes if it was not
+   already run on them. If any agent reports FAIL, show the findings and wait
+   for my decision before committing.
+5. Run lint and tests before calling a task done; say plainly if something
    was not run.
-5. If the plan turns out wrong, say so and change the plan first, in its own
+6. If the plan turns out wrong, say so and change the plan first, in its own
    commit.
-6. Log notable mistakes and hand-written code in `AI_USAGE.md`.
+7. Log notable mistakes and hand-written code in `AI_USAGE.md`.
 
 ## Do not (IMPORTANT!!!!!)
 
