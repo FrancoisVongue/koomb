@@ -1,0 +1,21 @@
+{
+  "name": "koomb",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm:dev -w backend\" \"npm:dev -w frontend\"",
+    "build": "npm run build -w frontend",
+    "start": "npm start -w backend",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "biome check --error-on-warnings",
+    "format": "biome check --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "concurrently": "^10.0.7"
+  }
+}
