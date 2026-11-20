@@ -58,3 +58,15 @@ export const addPage = async (url: string) => {
 };
 
 export type AddPageOutcome = Awaited<ReturnType<typeof addPage>>;
+
+export const deletePage = async (id: number) => {
+  const response = await fetch(`/api/pages/${id}`, { method: 'DELETE' });
+  if (response.status === 204) {
+    return venum('deleted');
+  }
+  if (response.status === 404) {
+    const error = await json<Api.ErrorBody>(response);
+    return venum('notFound', error);
+  }
+  throw unexpected(response);
+};

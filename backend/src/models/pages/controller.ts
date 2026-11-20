@@ -7,6 +7,7 @@ import {
   type AddPageInput,
   Page,
   type PageDetailQuery,
+  type PageId,
   type Pagination,
   ScrapedPage,
   ScrapeFailure,
@@ -47,6 +48,16 @@ export const getPage = async (services: Services, query: PageDetailQuery) => {
 
   const links = await listLinks(services, page.id, query.links);
   return venum('ok', { page, links });
+};
+
+/** Removes a page and its links. */
+export const deletePage = async (services: Services, id: PageId) => {
+  const deleted = await services.db.pages.delete(id);
+  if (!deleted) {
+    return venum('notFound', { message: `Page ${id} not found` });
+  }
+
+  return venum('deleted');
 };
 
 /** Scrapes a page right after it was added. Skipped if the sweep took it first. */

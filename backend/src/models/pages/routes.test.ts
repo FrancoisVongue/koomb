@@ -101,6 +101,22 @@ describe('GET /api/pages/:id', () => {
   });
 });
 
+describe('DELETE /api/pages/:id', () => {
+  it('removes the page and its links, then answers 404 for it', async () => {
+    const { post, api, services, background } = await start();
+    const { body: page } = await post({ url: URL_A });
+    await background.flush();
+
+    const deleted = await api(`/pages/${page.id}`, { method: 'DELETE' });
+    const again = await api(`/pages/${page.id}`, { method: 'DELETE' });
+
+    expect(deleted.status).toBe(204);
+    expect(again.status).toBe(404);
+    const links = await services.db.links.listByPage(page.id, { page: 1, pageSize: 10 });
+    expect(links.total).toBe(0);
+  });
+});
+
 describe('GET /api/pages/events', () => {
   it('streams page updates and heartbeats, and cleans up when the client leaves', async () => {
     const { post, api, scheduler } = await start();

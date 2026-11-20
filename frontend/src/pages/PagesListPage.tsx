@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
+import type { Api } from 'shared';
+import { toast } from 'sonner';
 import { match } from 'venum';
+import { deletePage } from '@/api/pages';
 import { AddPageForm } from '@/components/AddPageForm';
 import { PagePagination } from '@/components/PagePagination';
 import { PagesTable } from '@/components/PagesTable';
@@ -16,6 +19,23 @@ export function PagesListPage() {
 
   const showFirstPage = () => (page === 1 ? reload() : setPage(1));
 
+  const removePage = async (removed: Api.Page) => {
+    const result = await deletePage(removed.id);
+    match(result, {
+      deleted: () => {
+        toast.success('Page deleted', { description: removed.url });
+      },
+      notFound: () => {
+        toast.warning('This page was already deleted');
+      },
+    });
+    reload();
+  };
+
+  const handleDelete = (removed: Api.Page) => {
+    removePage(removed).catch(() => toast.error('Could not reach the server. Please try again.'));
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <AddPageForm onAdded={showFirstPage} />
@@ -25,7 +45,7 @@ export function PagesListPage() {
         ready: (pages) => (
           <>
             <section className="rounded-xl border bg-card">
-              <PagesTable pages={pages.items} />
+              <PagesTable pages={pages.items} onDelete={handleDelete} />
             </section>
             <PagePagination page={page} pageCount={Paginated.pageCount(pages)} />
           </>

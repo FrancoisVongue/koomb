@@ -3,8 +3,8 @@ import type { Api } from 'shared';
 import { match } from 'venum';
 import type { Services } from '../../services/index.ts';
 import { Link } from '../links/types.ts';
-import { addPage, getPage, listPages } from './controller.ts';
-import { AddPageInput, Page, PageDetailQuery, Pagination } from './types.ts';
+import { addPage, deletePage, getPage, listPages } from './controller.ts';
+import { AddPageInput, Page, PageDetailQuery, PageId, Pagination } from './types.ts';
 
 const HEARTBEAT_MS = 20_000;
 
@@ -90,6 +90,25 @@ export const pagesRoutes = (services: Services): Router => {
           links: Pagination.toApi(query.data.links, links, Link.toApi),
         };
         res.json(body);
+      },
+    });
+  });
+
+  router.delete('/:id', async (req, res) => {
+    const id = PageId.parse(req.params.id);
+    if (id.tag === 'invalid') {
+      badRequest(res, id.data);
+      return;
+    }
+
+    const result = await deletePage(services, id.data);
+    match(result, {
+      notFound: (error) => {
+        const body: Api.ErrorBody = error;
+        res.status(404).json(body);
+      },
+      deleted: () => {
+        res.status(204).end();
       },
     });
   });

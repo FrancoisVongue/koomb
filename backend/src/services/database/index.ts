@@ -67,6 +67,12 @@ export const createDatabase = (file: string) => {
 
       findById: async (id: number) => findById(id),
 
+      /** Deletes the page and, by cascade, its links. False if there was no such page. */
+      delete: async (id: number): Promise<boolean> => {
+        const result = db.delete(pages).where(eq(pages.id, id)).run();
+        return result.changes > 0;
+      },
+
       /** Newest first. */
       list: async (pagination: Pagination): Promise<Paged<Page.WithLinkCount>> => ({
         items: db
