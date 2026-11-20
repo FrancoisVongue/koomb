@@ -164,11 +164,11 @@ building it. Then do each part, write its tests, and commit.
 
 Built in this order; each one ships with its unit tests.
 
-1. Test tooling — `todo`
-2. Data — `todo`
-3. Link parsing — `todo`
-4. Scrape job (emits status events) — `todo`
-5. API (REST + SSE route) — `todo`
+1. Test tooling — `done`
+2. Data — `done`
+3. Link parsing — `done`
+4. Scrape job (emits status events) — `done`
+5. API (REST + SSE route) — `done`
 6. Frontend — `todo`
 
 #### Requirements covered
@@ -268,11 +268,17 @@ Built in this order; each one ships with its unit tests.
   Anything else is an expected outcome: the page is stored as `failed` with a
   reason.
 - **Decision:** only `http` and `https` URLs are accepted.
-- **Decision:** link name is the text of the `<a>`; if it contains elements,
-  its inner HTML, cut to 500 characters.
+- **Decision:** link name is the visible text of the `<a>`, like `innerText`
+  (no tags, comments or scripts; whitespace collapsed). A link without text
+  (an icon, an image) is named by its `aria-label`, `title` or the image's
+  `alt`; otherwise the name is empty. Cut to 500 characters.
+  - *Why:* TASK allows storing a portion of the HTML, but real pages put
+    icons, comments and indentation inside links; plain text reads better.
+    Changed after scraping w3schools.com for real.
 - **Decision:** relative `href`s are resolved against the page URL (and
-  `<base>`); `javascript:` and empty `href`s are dropped; duplicate links
-  (same resolved `href`) are kept once, first name wins.
+  `<base>`) and lose their `#fragment`; `javascript:` and empty `href`s are
+  dropped; duplicate links (same resolved `href`) are kept once, first name
+  wins.
 
 #### API
 
@@ -323,6 +329,16 @@ Built in this order; each one ships with its unit tests.
   is no title, the URL is shown. The link count column shows "in progress"
   or "failed" (with the error on hover) instead of a number.
 
+#### Local run (Docker)
+
+- **Decision:** Docker Compose for local testing only: one single-stage image
+  running the same two dev servers as `npm run dev` (frontend on :5173,
+  proxying `/api` to the backend on :3000), with the SQLite file in a volume.
+  - *Why:* run the app with only Docker installed; nothing to keep in sync
+    with a production setup.
+  - *Trade-off:* no hot reload in the container (the source is copied, not
+    mounted). The backend never serves the frontend.
+
 #### Security
 
 - **Decision:** the page fetcher rejects loopback and private addresses after
@@ -336,6 +352,24 @@ Built in this order; each one ships with its unit tests.
   - *Why:* a finished, well-verified core over extra features.
   - *Trade-off:* lint, typecheck and tests run locally only (Stop hook);
     every user sees every page.
+
+#### Found while building the backend
+
+- **Decision:** `shared/` is an npm workspace (`shared`) exporting the `Api`
+  namespace (types only), so both sides import it by name.
+- **Decision:** the sweep claims its batch (5 pages) at once and scrapes them
+  concurrently.
+  - *Why:* no loop in the controller; five fetches in parallel is fine for
+    SQLite and one process.
+- **Decision:** the SSE heartbeat (every 20 s) goes through the scheduler
+  service, so the route has no timers of its own.
+- **Decision:** an optional `backend/.env` is loaded with Node's
+  `process.loadEnvFile`; every variable has a default (`.env.example`).
+- **Decision:** the page is also announced on SSE when it is added
+  (`queued`), so other open tabs refetch the list.
+- *Trade-off:* `drizzle-kit` pulls an old `esbuild` with a moderate advisory
+  (dev server only). It is a dev dependency used only to generate
+  migrations, so it is accepted.
 
 ### 3.3 Open questions
 

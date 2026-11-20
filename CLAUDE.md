@@ -26,34 +26,42 @@ a part.
 
 ```
 frontend/                 # React app (Vite)
-shared/                   # DTO types used by BOTH frontend and backend
+shared/                   # API types (`Api` namespace) used by BOTH frontend and backend
 backend/
+  drizzle.config.ts       # drizzle-kit: generates migrations from the schema
+  .env.example
   src/
     models/
-      <model>/            # one folder per feature
+      <model>/            # one folder per feature: pages (HTTP API), scrape (background job)
         routes.ts
         controller.ts
         types.ts          # types + their pure functions
         adapter.ts        # complex logic around service calls (when needed)
-    services/             # all I/O: database, page fetcher, events, cron, clock
+    services/             # all I/O: database, page fetcher, events, scheduler, background, clock
+      index.ts            # the Services type and createServices()
+      testing.ts          # fake services for tests; never imported by app code
+      database/           # schema.ts, queries (index.ts), generated migrations/
     lib/                  # pure wrappers over third-party libraries (HTML parser); no I/O
+    app.ts                # Express app: routes and error handler (tests start it too)
+    config.ts             # environment variables, parsed
     index.ts              # creates the Services container, starts server and worker
-e2e/                      # end-to-end tests
+e2e/                      # end-to-end tests (not used yet)
 docs/                     # TASK.md, PLAN.md, sessions/
 ```
 
 ## Commands
 
-Filled in when the project skeleton is committed. Until then there is nothing
-to run; do not invent commands.
+Run from the repo root.
 
 | Task        | Command |
 |-------------|---------|
-| Install     |         |
-| Run (dev)   |         |
-| Test        |         |
-| Lint        |         |
-| Format      |         |
+| Install     | `npm install` |
+| Run (dev)   | `npm run dev` (backend on :3000, frontend on :5173) |
+| Test        | `npm test` (Vitest) |
+| Lint        | `npm run lint` (Biome: lint + format check) |
+| Format      | `npm run format` |
+| Typecheck   | `npm run typecheck` |
+| Migration   | `npm run db:generate -w backend` after changing `schema.ts` |
 
 ## Coding conventions
 
@@ -107,6 +115,9 @@ to run; do not invent commands.
 
 ## Testing
 
+- Test only what can really break: business rules, queries, failure handling.
+  What the type system and input validation already guarantee is not tested
+  again. Usually 3–7 tests per model; no trivial tests.
 - Every part ships with its tests in the same commit. Unit tests should be easy
   to write. Put unit tests next to the things they test (`*.test.ts`); no
   separate folder for unit tests.
