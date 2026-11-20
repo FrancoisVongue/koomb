@@ -1,0 +1,12 @@
+# Local testing only: `docker compose up --build`, then open http://localhost:5173
+services:
+  app:
+    build: .
+    ports:
+      - "5173:5173"
+      - "3000:3000"
+    volumes:
+      - data:/app/backend/data
+
+volumes:
+  data:
