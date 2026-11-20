@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 RUN npm ci
 
-EXPOSE 3000 5173
+EXPOSE 3031 3033
 # --host so the Vite dev server is reachable from outside the container;
-# Vite still proxies /api to the backend on localhost:3000, as locally.
+# Vite still proxies /api to the backend on localhost:3031, as locally.
 CMD ["npx", "concurrently", "-n", "backend,frontend", "npm run dev -w backend", "npm run dev -w frontend -- --host"]

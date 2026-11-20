@@ -7,7 +7,7 @@ export namespace Config {
   /** Every variable is optional; see .env.example. */
   export const schema = z
     .object({
-      PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+      PORT: z.coerce.number().int().min(1).max(65_535).default(3031),
       DATABASE_FILE: z.string().min(1).default('data/koomb.db'),
     })
     .transform((env) => ({ port: env.PORT, databaseFile: env.DATABASE_FILE }));

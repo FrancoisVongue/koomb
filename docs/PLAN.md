@@ -339,8 +339,8 @@ Built in this order; each one ships with its unit tests.
 #### Local run (Docker)
 
 - **Decision:** Docker Compose for local testing only: one single-stage image
-  running the same two dev servers as `npm run dev` (frontend on :5173,
-  proxying `/api` to the backend on :3000), with the SQLite file in a volume.
+  running the same two dev servers as `npm run dev` (frontend on :3033,
+  proxying `/api` to the backend on :3031), with the SQLite file in a volume.
   - *Why:* run the app with only Docker installed; nothing to keep in sync
     with a production setup.
   - *Trade-off:* no hot reload in the container (the source is copied, not
