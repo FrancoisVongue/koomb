@@ -25,8 +25,14 @@ export const fetchPages = async (page: number): Promise<Api.Paginated<Api.Page>>
 
 export const fetchPageDetail = async (id: number, page: number) => {
   const response = await fetch(`/api/pages/${id}?${pageQuery(page)}`);
-  if (response.ok) return venum('found', await json<Api.PageDetail>(response));
-  if (response.status === 404) return venum('notFound', await json<Api.ErrorBody>(response));
+  if (response.ok) {
+    const detail = await json<Api.PageDetail>(response);
+    return venum('found', detail);
+  }
+  if (response.status === 404) {
+    const error = await json<Api.ErrorBody>(response);
+    return venum('notFound', error);
+  }
   throw unexpected(response);
 };
 
@@ -36,11 +42,18 @@ export const addPage = async (url: string) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),
   });
-  if (response.status === 201) return venum('created', await json<Api.Page>(response));
-  if (response.status === 409) {
-    return venum('alreadyExists', await json<Api.AlreadyExistsBody>(response));
+  if (response.status === 201) {
+    const page = await json<Api.Page>(response);
+    return venum('created', page);
   }
-  if (response.status === 400) return venum('invalid', await json<Api.ErrorBody>(response));
+  if (response.status === 409) {
+    const existing = await json<Api.AlreadyExistsBody>(response);
+    return venum('alreadyExists', existing);
+  }
+  if (response.status === 400) {
+    const error = await json<Api.ErrorBody>(response);
+    return venum('invalid', error);
+  }
   throw unexpected(response);
 };
 

@@ -58,7 +58,7 @@ Run from the repo root.
 | Task        | Command |
 |-------------|---------|
 | Install     | `npm install` |
-| Run (dev)   | `npm run dev` (backend on :3000, frontend on :5173) |
+| Run (dev)   | `npm run dev` (backend on :3031, frontend on :3033) |
 | Test        | `npm test` (Vitest) |
 | Lint        | `npm run lint` (Biome: lint + format check) |
 | Format      | `npm run format` |
@@ -80,7 +80,12 @@ Run from the repo root.
   `models/<model>/adapter.ts`. Don't make the controller unreadable; fight to
   keep it as readable as possible.
 - Expected outcomes are returned, not thrown: `venum('ok', data)`,
-  `venum('notFound', { message })`. The route handles every case with `match`.
+  `venum('notFound', { message })`. Invalid input returns early with 400; the
+  route handles every controller outcome with `match`.
+- One step per line, optimized for reading and debugging, not for being
+  short: store each awaited result in a named variable before using it, and
+  never put an `await` inside another call (`venum('ok', await x())` is
+  wrong). Name intermediate values when it helps the reader.
 - No `try/catch` for expected branches. Real infrastructure failures bubble to
   the global error handler.
 - Failures of the page being scraped (unreachable, timeout, bad status,

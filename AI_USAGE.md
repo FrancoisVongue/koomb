@@ -74,6 +74,17 @@ the SSE stream). Claude also reported "this environment has no internet"
 because `example.com` didn't resolve; only that host failed on this machine's
 DNS. Scraping `w3schools.com` worked (190 links).
 
+### 6. Compact code that hides the steps
+
+Controllers and routes were written as dense one-liners, e.g.
+`venum('ok', await services.db.pages.list(pagination))`, and routes as nested
+`match` calls with `await` inside. A thrown error still reached the global
+error handler, but there was no intermediate value to inspect, and each line
+did several things. I asked for one step per line with named variables and no
+`await` inside other calls; routes and controllers were rewritten, the error
+log now includes the request, and the rule is in CLAUDE.md and the controller
+reviewer.
+
 ## What I wrote or rewrote by hand
 
 <!-- e.g. CLAUDE.md, docs/PLAN.md decisions. -->

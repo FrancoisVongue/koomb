@@ -34,6 +34,9 @@ Only `controller.ts` files in the diff (return `N/A` if there are none).
   type's namespace. Loops, string handling, SQL, HTML parsing or long
   conditionals inside a controller are findings.
 - Outcomes are returned as `venum` values for the route to `match`.
+- One step per line: every awaited result is stored in a named variable; no
+  `await` inside another call's arguments (`venum('ok', await x())`). Also
+  check the `routes.ts` next to each controller for the same rule.
 
 For each finding, name the lines that hurt readability and where they should
 move.
