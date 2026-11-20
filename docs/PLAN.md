@@ -293,7 +293,9 @@ Built in this order; each one ships with its unit tests.
   - `POST /api/pages`: add a URL;
   - `GET /api/pages?page=&pageSize=`: pages list with link count and status;
   - `GET /api/pages/:id?page=&pageSize=`: one page and its links;
-  - `GET /api/pages/events`: SSE stream (see Live updates).
+  - `GET /api/pages/events`: SSE stream (see Live updates);
+  - `DELETE /api/pages/:id`: remove a page and its links (added later, see
+    "Found while building").
 - **Decision:** pagination with the `page` and `pageSize` query params;
   responses include the total count so the UI can show page numbers.
 - **Decision:** the same URL added twice does not create a new page. The API
@@ -385,6 +387,15 @@ Built in this order; each one ships with its unit tests.
 - *Trade-off:* `drizzle-kit` pulls an old `esbuild` with a moderate advisory
   (dev server only). It is a dev dependency used only to generate
   migrations, so it is accepted.
+- **Decision:** pages can be deleted (`DELETE /api/pages/:id`, a trash
+  button in the list). Links go with the page (`ON DELETE CASCADE`). A page
+  deleted while it is being scraped is an expected outcome: the scrape ends
+  quietly instead of throwing.
+  - *Trade-off:* other open tabs don't refresh on a delete (no SSE event for
+    it).
+- **Decision:** `npm run dev` waits 3 s before each page fetch
+  (`SCRAPE_DELAY_MS`), on purpose, so the "in progress" status is visible;
+  `npm start` and tests use 0. Kept that way.
 
 ### 3.3 Open questions
 
@@ -392,23 +403,29 @@ None for now. New questions are added here as the parts are built.
 
 ---
 
-## 4. At the end — `todo`
+## 4. At the end — `in progress`
 
 ### 4.1 Review
 
 1. Create new separate agents and evaluate the work from different
-   perspectives.
-2. Update the repo based on the agent reviews.
+   perspectives. — `todo` (the `/review` invariant agents already ran on
+   `main..dev`; their findings were fixed)
+2. Update the repo based on the agent reviews. — `todo`
 
 ### 4.2 Documentation
 
-1. Define the trade-offs made.
-2. Explain the verification loop (Stop hook + `/review`) in the README.
-3. Add session transcripts to `docs/sessions/`.
-4. List the stack and every tool used in the README.
+1. Define the trade-offs made. — `done` (README "Trade-offs")
+2. Explain the verification loop (Stop hook + `/review`) in the README. —
+   `done`
+3. Add session transcripts to `docs/sessions/`. — `todo`
+4. List the stack and every tool used in the README. — `done`
 5. Make sure the app starts with one command, and the README says clearly how:
-   setup and run, how to run the tests, tools used, trade-offs.
+   setup and run, how to run the tests, tools used, trade-offs. — `done`
+   (`npm install && npm run dev`, or `docker compose up --build`)
+6. Fill in `AI_USAGE.md`: workflow, key prompts, what was written by hand,
+   time split. — `todo` (by me)
 
 ### 4.3 Delivery
 
-1. Create the repo and push.
+1. Create the repo and push. — `done` (`dev` branch on GitHub)
+2. Merge `dev` into `main`. — `todo`
