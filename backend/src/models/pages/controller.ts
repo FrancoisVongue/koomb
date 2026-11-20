@@ -1,4 +1,3 @@
-import type { Api } from 'shared';
 import { venum } from 'venum';
 import type { PageFetcher } from '../../services/fetcher.ts';
 import type { Services } from '../../services/index.ts';
@@ -69,7 +68,7 @@ export const scrapePage = async (services: Services, pageId: number) => {
   }
 
   const result = await scrape(services, page);
-  return venum('scraped', result);
+  return result;
 };
 
 /** Re-queues stuck pages, then scrapes a batch of queued ones. Run by cron.ts. */
@@ -79,22 +78,28 @@ export const sweep = async (services: Services) => {
   const requeued = await services.db.pages.requeueStuck(stuckBefore, now);
   const batch = await services.db.pages.claimQueued(Sweep.BATCH_SIZE, now);
 
-  const scraped = await Promise.all(batch.map((page) => scrape(services, page)));
+  const results = await Promise.all(batch.map((page) => scrape(services, page)));
 
-  return venum('swept', { requeued, scraped });
+  return venum('swept', { requeued, results });
 };
 
-/** Fetches a claimed page and stores its links, or the failure. */
-const scrape = async (services: Services, page: Page): Promise<Api.PageUpdatedEvent> => {
+/**
+ * Fetches a claimed page and stores its links, or the failure. The page may
+ * have been deleted meanwhile: then there is nothing to store or announce.
+ */
+const scrape = async (services: Services, page: Page) => {
   const processing = Page.toEvent(page);
   services.events.pageUpdated(processing);
 
   const fetched = await services.fetcher.fetchPage(page.url);
   const updated = await storeResult(services, page, fetched);
+  if (!updated) {
+    return venum('gone', { id: page.id });
+  }
 
   const finished = Page.toEvent(updated);
   services.events.pageUpdated(finished);
-  return finished;
+  return venum('scraped', finished);
 };
 
 /** A tag check, not match: venum's `_` handler does not narrow to the failures. */

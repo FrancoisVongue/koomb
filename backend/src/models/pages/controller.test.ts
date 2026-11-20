@@ -60,6 +60,24 @@ describe('scrapePage', () => {
       error: 'Not an HTML page (application/pdf)',
     });
   });
+
+  it('drops the result of a page deleted while it was being fetched', async () => {
+    const { services, events, add } = setup({});
+    const page = await add(URL_A);
+    services.fetcher = {
+      fetchPage: async (url) => {
+        await services.db.pages.delete(page.id);
+        return htmlPage(url, '<a href="/1">1</a>');
+      },
+    };
+
+    const result = await scrapePage(services, page.id);
+
+    expect(result).toEqual(venum('gone', { id: page.id }));
+    const links = await services.db.links.listByPage(page.id, { page: 1, pageSize: 20 });
+    expect(links.total).toBe(0);
+    expect(events.map((e) => e.status)).toEqual(['processing']);
+  });
 });
 
 describe('sweep', () => {

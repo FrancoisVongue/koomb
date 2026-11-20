@@ -124,9 +124,19 @@ export const createDatabase = (file: string) => {
           .where(and(eq(pages.status, 'processing'), lt(pages.updatedAt, before)))
           .run().changes,
 
-      /** Replaces the page's links and marks it `done`. */
-      complete: async (id: number, scraped: ScrapedPage, now: Date): Promise<Page.WithLinkCount> =>
+      /**
+       * Replaces the page's links and marks it `done`. Undefined if the page was
+       * deleted while it was being scraped.
+       */
+      complete: async (
+        id: number,
+        scraped: ScrapedPage,
+        now: Date,
+      ): Promise<Page.WithLinkCount | undefined> =>
         db.transaction((tx) => {
+          // Checked first: inserting links for a deleted page breaks the foreign key.
+          const existing = tx.select({ id: pages.id }).from(pages).where(eq(pages.id, id)).get();
+          if (!existing) return undefined;
           tx.delete(links).where(eq(links.pageId, id)).run();
           for (let i = 0; i < scraped.links.length; i += INSERT_CHUNK) {
             const chunk = scraped.links.slice(i, i + INSERT_CHUNK);
@@ -140,16 +150,19 @@ export const createDatabase = (file: string) => {
             .where(eq(pages.id, id))
             .returning()
             .get();
-          if (!page) throw new Error(`Page ${id} disappeared while it was being scraped`);
+          if (!page) return undefined;
           return { ...page, linkCount: scraped.links.length };
         }),
 
-      /** Records a failed attempt: back to `queued` if it will be retried, else `failed`. */
+      /**
+       * Records a failed attempt: back to `queued` if it will be retried, else
+       * `failed`. Undefined if the page was deleted while it was being scraped.
+       */
       fail: async (
         id: number,
         failure: ScrapeFailure.Outcome,
         now: Date,
-      ): Promise<Page.WithLinkCount> => {
+      ): Promise<Page.WithLinkCount | undefined> => {
         db.update(pages)
           .set({
             status: failure.retry ? 'queued' : 'failed',
@@ -158,9 +171,7 @@ export const createDatabase = (file: string) => {
           })
           .where(eq(pages.id, id))
           .run();
-        const page = findById(id);
-        if (!page) throw new Error(`Page ${id} disappeared while it was being scraped`);
-        return page;
+        return findById(id);
       },
     },
 
