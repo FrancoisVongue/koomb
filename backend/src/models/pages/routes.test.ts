@@ -1,5 +1,5 @@
 import type { Api } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../app.ts';
 import { createTestServices, fakeFetcher, htmlPage, startServer } from '../../services/testing.ts';
 
@@ -118,7 +118,6 @@ describe('GET /api/pages/events', () => {
     expect((await reader.read()).value).toBe(': heartbeat\n\n');
 
     client.abort();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(scheduler.active()).toBe(0);
+    await vi.waitFor(() => expect(scheduler.active()).toBe(0));
   });
 });

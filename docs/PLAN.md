@@ -155,7 +155,7 @@ every commit.
 
 ---
 
-## 3. Implementation — `todo`
+## 3. Implementation — `done`
 
 Break the work into parts; write the decisions for each part here before
 building it. Then do each part, write its tests, and commit.
@@ -169,7 +169,7 @@ Built in this order; each one ships with its unit tests.
 3. Link parsing — `done`
 4. Scrape job (emits status events) — `done`
 5. API (REST + SSE route) — `done`
-6. Frontend — `todo`
+6. Frontend — `done`
 
 #### Requirements covered
 
@@ -256,7 +256,8 @@ Built in this order; each one ships with its unit tests.
   safety net: it picks up `queued` pages and puts pages stuck in `processing`
   for more than 2 min back to `queued`.
 - **Decision:** automatic retry, up to 3 attempts (`attempts`), then `failed`
-  with the reason in `error`. A manual retry button is a nice-to-have.
+  with the reason in `error`. A manual retry button is a nice-to-have, not
+  built.
 
 #### Scraping
 
@@ -325,6 +326,12 @@ Built in this order; each one ships with its unit tests.
 
 - **Decision:** shadcn/ui components (with Tailwind); toasts with the shadcn
   `sonner` component.
+- **Decision:** `react-router` for the two screens; plain `fetch` with small
+  custom hooks, no data-fetching library. `api/` is the only place that
+  knows URLs and status codes and returns venum outcomes, like the backend.
+- **Decision:** no frontend tests.
+  - *Why:* the frontend is not evaluated; testing effort goes to the backend.
+  - *Trade-off:* UI helpers such as pagination numbers are checked by hand.
 - **Decision:** page name is the `<title>`; while processing, or when there
   is no title, the URL is shown. The link count column shows "in progress"
   or "failed" (with the error on hover) instead of a number.
@@ -363,8 +370,10 @@ Built in this order; each one ships with its unit tests.
     SQLite and one process.
 - **Decision:** the SSE heartbeat (every 20 s) goes through the scheduler
   service, so the route has no timers of its own.
-- **Decision:** an optional `backend/.env` is loaded with Node's
-  `process.loadEnvFile`; every variable has a default (`.env.example`).
+- **Decision:** an optional `backend/.env` is loaded with `dotenv`, and the
+  variables are validated with a `zod` schema in `Config`; every variable
+  has a default (`.env.example`). An invalid value stops the start with
+  zod's message.
 - **Decision:** the page is also announced on SSE when it is added
   (`queued`), so other open tabs refetch the list.
 - *Trade-off:* `drizzle-kit` pulls an old `esbuild` with a moderate advisory

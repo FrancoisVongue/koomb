@@ -1,4 +1,6 @@
+import type { Api } from 'shared';
 import { venum } from 'venum';
+import type { PageFetcher } from '../../services/fetcher.ts';
 import type { Services } from '../../services/index.ts';
 import { Page } from '../pages/types.ts';
 import { ScrapedPage, ScrapeFailure, Sweep } from './types.ts';
@@ -23,24 +25,22 @@ export const sweep = async (services: Services) => {
 };
 
 /** Fetches a claimed page and stores its links, or the failure. */
-const scrape = async (services: Services, page: Page) => {
+const scrape = async (services: Services, page: Page): Promise<Api.PageUpdatedEvent> => {
   services.events.pageUpdated(Page.toEvent(page));
 
   const fetched = await services.fetcher.fetchPage(page.url);
-  // A tag check instead of match: venum's `_` handler does not narrow to the failures.
+  // A tag check, not match: venum's `_` handler does not narrow to the failures.
   const updated =
     fetched.tag === 'ok'
-      ? await services.db.pages.complete(
-          page.id,
-          ScrapedPage.fromHtml(fetched.data.html, fetched.data.url),
-          services.clock.now(),
-        )
-      : await services.db.pages.fail(
-          page.id,
-          ScrapeFailure.outcome(fetched, page),
-          services.clock.now(),
-        );
+      ? await storeLinks(services, page, fetched.data)
+      : await storeFailure(services, page, fetched);
 
   services.events.pageUpdated(Page.toEvent(updated));
-  return { id: updated.id, status: updated.status };
+  return Page.toEvent(updated);
 };
+
+const storeLinks = (services: Services, page: Page, { html, url }: PageFetcher.Fetched) =>
+  services.db.pages.complete(page.id, ScrapedPage.fromHtml(html, url), services.clock.now());
+
+const storeFailure = (services: Services, page: Page, failure: PageFetcher.Failure) =>
+  services.db.pages.fail(page.id, ScrapeFailure.outcome(failure, page), services.clock.now());

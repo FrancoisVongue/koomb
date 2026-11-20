@@ -47,6 +47,8 @@ backend/
     index.ts              # creates the Services container, starts server and worker
 e2e/                      # end-to-end tests (not used yet)
 docs/                     # TASK.md, PLAN.md, sessions/
+Dockerfile, compose.yaml  # local testing only (see README)
+README.md, AI_USAGE.md, biome.json, .nvmrc, .dockerignore
 ```
 
 ## Commands
@@ -132,7 +134,8 @@ Run from the repo root.
 ## Workflow
 
 1. Before building a part, write its decisions into `docs/PLAN.md` and stop for
-   my review.
+   my review. Small decisions made while building are fine: record them in
+   PLAN.md afterwards ("Found while building").
 2. Build one part at a time. Small commits, one meaning each.
 3. Commit only after my explicit approval or when I ask.
 4. Before committing, run `/review` on the staged changes if it was not

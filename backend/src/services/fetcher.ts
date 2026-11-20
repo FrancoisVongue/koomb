@@ -23,6 +23,8 @@ export type PageFetcher = {
 
 export namespace PageFetcher {
   export type Result = Awaited<ReturnType<typeof fetchPage>>;
+  /** A downloaded page: its HTML and the URL it ended on after redirects. */
+  export type Fetched = Extract<Result, { tag: 'ok' }>['data'];
   export type Failure = Exclude<Result, { tag: 'ok' }>;
 }
 

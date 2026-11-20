@@ -1,22 +1,20 @@
 import { venum } from 'venum';
+import { z } from 'zod';
 
-export type Config = {
-  port: number;
-  databaseFile: string;
-};
+export type Config = z.infer<typeof Config.schema>;
 
 export namespace Config {
-  export const DEFAULT_PORT = 3000;
-  export const DEFAULT_DATABASE_FILE = 'data/koomb.db';
+  /** Every variable is optional; see .env.example. */
+  export const schema = z
+    .object({
+      PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
+      DATABASE_FILE: z.string().min(1).default('data/koomb.db'),
+    })
+    .transform((env) => ({ port: env.PORT, databaseFile: env.DATABASE_FILE }));
 
   export const parse = (env: Record<string, string | undefined>) => {
-    const port = env.PORT === undefined ? DEFAULT_PORT : Number(env.PORT);
-    if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-      return venum('invalid', { message: `PORT must be a port number, got "${env.PORT}"` });
-    }
-    return venum('ok', {
-      port,
-      databaseFile: env.DATABASE_FILE ?? DEFAULT_DATABASE_FILE,
-    } satisfies Config);
+    const result = schema.safeParse(env);
+    if (!result.success) return venum('invalid', { message: z.prettifyError(result.error) });
+    return venum('ok', result.data);
   };
 }

@@ -50,6 +50,9 @@ export namespace ScrapedPage {
 }
 
 export namespace ScrapeFailure {
+  /** What is recorded after a failed attempt. */
+  export type Outcome = { error: string; retry: boolean };
+
   export const describe = (failure: PageFetcher.Failure): string =>
     match(failure, {
       timeout: ({ timeoutMs }) => `The page did not answer within ${timeoutMs / 1000} s`,
@@ -71,7 +74,7 @@ export namespace ScrapeFailure {
     });
 
   /** What to record after a failed attempt on `page`. */
-  export const outcome = (failure: PageFetcher.Failure, page: Page) => ({
+  export const outcome = (failure: PageFetcher.Failure, page: Page): Outcome => ({
     error: describe(failure),
     retry: isTemporary(failure) && page.attempts < Page.MAX_ATTEMPTS,
   });

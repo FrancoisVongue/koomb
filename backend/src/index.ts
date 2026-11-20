@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import dotenv from 'dotenv';
 import { match } from 'venum';
 import { createApp } from './app.ts';
 import { Config } from './config.ts';
@@ -6,8 +6,8 @@ import { sweep } from './models/scrape/controller.ts';
 import { Sweep } from './models/scrape/types.ts';
 import { createServices } from './services/index.ts';
 
-// Optional local overrides, see .env.example.
-if (existsSync('.env')) process.loadEnvFile('.env');
+// Optional backend/.env (see .env.example), validated by Config.
+dotenv.config({ quiet: true });
 
 const config = match(Config.parse(process.env), {
   ok: (config) => config,
