@@ -3,6 +3,16 @@
 > test strategy) were then written step by step in
 > [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md).
 
+**Where the TASK.md 4.4 items are** (each written before its part was built):
+
+| Item | Section in DEVELOPMENT_PLAN.md |
+|------|--------------------------------|
+| Breakdown of the requirements | [3.1 Parts](DEVELOPMENT_PLAN.md#31-parts), [Requirements covered](DEVELOPMENT_PLAN.md#requirements-covered) |
+| Ambiguities and the decisions made | [3.2 Decisions](DEVELOPMENT_PLAN.md#32-decisions) (Scraping, API, Scope, Found while building) |
+| Data model | [3.2 Data](DEVELOPMENT_PLAN.md#data) |
+| How slow pages are handled | [3.2 Slow pages](DEVELOPMENT_PLAN.md#slow-pages), [Live updates](DEVELOPMENT_PLAN.md#live-updates) |
+| Test strategy | [3.2 Testing](DEVELOPMENT_PLAN.md#testing) |
+
 # Plan
 20 Nov 2026 · @Francois Vongue
 This is the starting plan: how the work will go. Decisions (stack, data model, slow pages, tests) are added to this file step by step, each one before the part it concerns is implemented.

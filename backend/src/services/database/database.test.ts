@@ -50,14 +50,22 @@ describe('database', () => {
     expect(await db.pages.claimQueued(5, at(1))).toEqual([]);
   });
 
-  it('requeues only pages stuck in processing since before the cutoff', async () => {
+  it('requeues pages stuck since before the cutoff, and fails them after the last attempt', async () => {
     const stuck = await create('https://stuck.test/');
     const fresh = await create('https://fresh.test/');
     await db.pages.claim(stuck.id, at(0));
     await db.pages.claim(fresh.id, at(100));
 
-    expect(await db.pages.requeueStuck(at(50), at(120))).toBe(1);
+    expect(await db.pages.requeueStuck(at(50), at(120), 3)).toBe(1);
     expect(await db.pages.findById(stuck.id)).toMatchObject({ status: 'queued' });
+    expect(await db.pages.findById(fresh.id)).toMatchObject({ status: 'processing' });
+
+    await db.pages.claim(stuck.id, at(130));
+    expect(await db.pages.requeueStuck(at(200), at(210), 2)).toBe(1);
+    expect(await db.pages.findById(stuck.id)).toMatchObject({
+      status: 'failed',
+      error: 'Gave up after 2 attempts',
+    });
   });
 
   it('replaces the links of a page when it is scraped again, beyond one insert chunk', async () => {

@@ -75,7 +75,7 @@ export const scrapePage = async (services: Services, pageId: PageId) => {
 export const sweep = async (services: Services) => {
   const now = services.clock.now();
   const stuckBefore = Sweep.stuckBefore(now);
-  const requeued = await services.db.pages.requeueStuck(stuckBefore, now);
+  const requeued = await services.db.pages.requeueStuck(stuckBefore, now, Page.MAX_ATTEMPTS);
   const batch = await services.db.pages.claimQueued(Sweep.BATCH_SIZE, now);
 
   // allSettled: one page failing (e.g. a database error) must not lose the others.

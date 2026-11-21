@@ -18,6 +18,7 @@ beforeAll(async () => {
       res.writeHead(200, { 'content-type': 'text/html' }).end('x'.repeat(5_000));
     else if (req.url === '/slow') setTimeout(() => res.end(HTML), 500);
     else if (req.url === '/loop') res.writeHead(302, { location: '/loop' }).end();
+    else if (req.url === '/bad-redirect') res.writeHead(302, { location: 'http://[' }).end();
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -43,6 +44,7 @@ describe('page fetcher', () => {
     expect((await fetcher.fetchPage(`${base}/big`)).tag).toBe('tooLarge');
     expect((await fetcher.fetchPage(`${base}/slow`)).tag).toBe('timeout');
     expect((await fetcher.fetchPage(`${base}/loop`)).tag).toBe('tooManyRedirects');
+    expect((await fetcher.fetchPage(`${base}/bad-redirect`)).tag).toBe('badRedirect');
     expect((await fetcher.fetchPage('http://127.0.0.1:1/')).tag).toBe('unreachable');
   });
 

@@ -22,8 +22,8 @@ URLs and duplicates).
 You may run `npm test` from the repo root. You may also start the backend on a
 spare port to try the API, e.g.
 `PORT=3140 DATABASE_FILE=/tmp/<random>/x.db npx tsx backend/src/index.ts` with
-`curl`, but stop it afterwards (kill its process group). Don't use ports 3031
-or 3033 (the user's dev servers may be running).
+`curl`, but stop it afterwards (kill its process group). Don't use ports 3061
+or 3062 (the user's dev servers may be running).
 
 ## Be objective
 

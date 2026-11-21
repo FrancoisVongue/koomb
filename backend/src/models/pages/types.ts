@@ -110,7 +110,7 @@ export namespace Pagination {
     if (value === undefined) return fallback;
     if (typeof value !== 'string' || !/^\d+$/.test(value)) return undefined;
     const n = Number(value);
-    return n >= 1 ? n : undefined;
+    return Number.isSafeInteger(n) && n >= 1 ? n : undefined;
   };
 }
 
@@ -163,6 +163,7 @@ export namespace ScrapeFailure {
       tooLarge: ({ maxBytes }) => `The page is larger than ${maxBytes / (1024 * 1024)} MB`,
       blocked: ({ hostname }) => `${hostname} is a private or local address`,
       tooManyRedirects: ({ maxRedirects }) => `More than ${maxRedirects} redirects`,
+      badRedirect: ({ location }) => `The page redirected to an invalid URL (${location})`,
     });
 
   /** Failures that may go away on their own: worth another attempt. */
