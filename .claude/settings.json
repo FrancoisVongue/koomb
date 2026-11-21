@@ -7,6 +7,7 @@
       "Bash(npm run format)",
       "Bash(npm run build)",
       "Bash(npm test*)",
+      "Bash(npx vitest*)",
       "Bash(npm ls*)",
       "Bash(npm view *)",
       "Bash(npm outdated*)",

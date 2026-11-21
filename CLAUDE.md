@@ -4,56 +4,77 @@
 
 Web scraper: a user submits a URL, the app scrapes the page in the background
 and stores every `<a>` link found on it. Requirements are in `docs/TASK.md`.
-Decisions are in `docs/PLAN.md`; it grows step by step, read it before starting
+Decisions are in `docs/DEVELOPMENT_PLAN.md`; it grows step by step, read it before starting
 a part.
 
 ## Architecture
 
-    HTTP route -> controller -> business logic + services (db/etc)
-    add URL    -> page saved as "in progress" -> background job
-               -> fetch page -> parse links -> save -> page marked done
+    entrances:  app.ts (HTTP, by clients)   cron.ts (by time)
+                      |                            |
+                   routes                          |
+                      +------> controllers <-------+
+                               (use cases on a model; may call other controllers)
+                                 |            |
+                    business logic (types)   services (db, fetcher, events…)
 
+    add URL -> page saved as "queued" -> scraped in the background
+            -> fetch page -> parse links -> save -> page marked done
+
+- Models are the things (pages, links). What we do with them, the use cases,
+  are controller functions. There are two entrances that invoke them: HTTP
+  (`app.ts` → routes) and time (`cron.ts`). Entrances are not services.
 - A request never waits for scraping.
 - The database is the single source of truth, including page status.
-- Everything external or async (database, page fetcher, events, cron, clock)
-  is a service. `backend/src/index.ts` creates all services once, in one typed
-  container (`Services`), and passes it to routes, from routes to
-  controllers, and to the worker. Nothing else imports or creates a service.
-- Stack and architecture decisions are recorded in `docs/PLAN.md`. Do not make
+- Everything external or async that controllers use (database, page fetcher,
+  events, background, clock) is a service. `backend/src/index.ts` creates all
+  services once, in one typed container (`Services`), and passes it to both
+  entrances, and from them to controllers. Nothing else imports or creates a
+  service.
+- Stack and architecture decisions are recorded in `docs/DEVELOPMENT_PLAN.md`. Do not make
   new ones yourself.
 
 ## Folder map
 
 ```
 frontend/                 # React app (Vite)
-shared/                   # DTO types used by BOTH frontend and backend
+shared/                   # API types (`Api` namespace) used by BOTH frontend and backend
 backend/
+  drizzle.config.ts       # drizzle-kit: generates migrations from the schema
+  .env.example
   src/
     models/
-      <model>/            # one folder per feature
+      <model>/            # one folder per model: pages, links
         routes.ts
         controller.ts
         types.ts          # types + their pure functions
         adapter.ts        # complex logic around service calls (when needed)
-    services/             # all I/O: database, page fetcher, events, cron, clock
+    services/             # all I/O: database, page fetcher, events, scheduler, background, clock
+      index.ts            # the Services type and createServices()
+      testing.ts          # fake services for tests; never imported by app code
+      database/           # schema.ts, queries (index.ts), generated migrations/
     lib/                  # pure wrappers over third-party libraries (HTML parser); no I/O
-    index.ts              # creates the Services container, starts server and worker
-e2e/                      # end-to-end tests
-docs/                     # TASK.md, PLAN.md, sessions/
+    app.ts                # entrance 1, HTTP: Express app, routes, error handler (tests start it too)
+    cron.ts               # entrance 2, time: runs the sweep every 10 s
+    config.ts             # environment variables, parsed
+    index.ts              # creates the Services container, starts both entrances
+docs/                     # TASK.md, PLAN.md (first plan), DEVELOPMENT_PLAN.md (decisions), sessions/
+Dockerfile, compose.yaml  # local testing only (see README)
+README.md, AI_USAGE.md, biome.json, .nvmrc, .dockerignore
 ```
 
 ## Commands
 
-Filled in when the project skeleton is committed. Until then there is nothing
-to run; do not invent commands.
+Run from the repo root.
 
 | Task        | Command |
 |-------------|---------|
-| Install     |         |
-| Run (dev)   |         |
-| Test        |         |
-| Lint        |         |
-| Format      |         |
+| Install     | `npm install` |
+| Run (dev)   | `npm run dev` (backend on :3061, frontend on :3062) |
+| Test        | `npm test` (Vitest) |
+| Lint        | `npm run lint` (Biome: lint + format check) |
+| Format      | `npm run format` |
+| Typecheck   | `npm run typecheck` |
+| Migration   | `npm run db:generate -w backend` after changing `schema.ts` |
 
 ## Coding conventions
 
@@ -70,13 +91,18 @@ to run; do not invent commands.
   `models/<model>/adapter.ts`. Don't make the controller unreadable; fight to
   keep it as readable as possible.
 - Expected outcomes are returned, not thrown: `venum('ok', data)`,
-  `venum('notFound', { message })`. The route handles every case with `match`.
+  `venum('notFound', { message })`. Invalid input returns early with 400; the
+  route handles every controller outcome with `match`.
+- One step per line, optimized for reading and debugging, not for being
+  short: store each awaited result in a named variable before using it, and
+  never put an `await` inside another call (`venum('ok', await x())` is
+  wrong). Name intermediate values when it helps the reader.
 - No `try/catch` for expected branches. Real infrastructure failures bubble to
   the global error handler.
 - Failures of the page being scraped (unreachable, timeout, bad status,
   non-HTML) are expected outcomes: return a venum and store the page as failed.
   Only our own infrastructure failures (DB down, bugs) are thrown. Refined in
-  `docs/PLAN.md` when the scraping part is planned.
+  `docs/DEVELOPMENT_PLAN.md` when the scraping part is planned.
 - Outside input (request body, query, fetched HTML) is parsed into a named type
   at the boundary. Models, DTOs and outcomes are named types, not inline shapes.
 - Pure functions (parsing, transforms) do no I/O. They are defined on types, in
@@ -94,10 +120,11 @@ to run; do not invent commands.
 - `shared/` contains only types used by both frontend and backend, plus their
   namespaces of pure functions. If it is not shared, it does not go in
   `shared/`.
-- Code is grouped by feature, not by technical layer. We use hexagonal
+- Code is grouped by model, not by technical layer. We use hexagonal
   architecture, so do not create top-level folders such as `controllers/` or
   `repositories/` (`services/` is the one exception: shared infrastructure).
-  Controllers are managers of both services and business logic.
+  Controllers are managers of both services and business logic; a
+  controller may call another model's controller (e.g. pages → links).
   Business logic is defined in types.
   A service is an external program/process that we use to do certain functions.
 - Use venum for complete handling of errors (pre-approved dependency; read its
@@ -107,6 +134,9 @@ to run; do not invent commands.
 
 ## Testing
 
+- Test only what can really break: business rules, queries, failure handling.
+  What the type system and input validation already guarantee is not tested
+  again. Usually 3–7 tests per model; no trivial tests.
 - Every part ships with its tests in the same commit. Unit tests should be easy
   to write. Put unit tests next to the things they test (`*.test.ts`); no
   separate folder for unit tests.
@@ -114,14 +144,15 @@ to run; do not invent commands.
 - Routes are tested through HTTP, not by calling controllers.
 - Controllers and the worker are tested with a container of fake services.
   Substitute services through the container; no `vi.mock` of service modules.
-- End-to-end tests live in `e2e/`.
+- No end-to-end tests for now (see DEVELOPMENT_PLAN.md); they would go in `e2e/`.
 - Tests never touch the real internet: use HTML fixtures or a local server.
 - Tools are added here once chosen.
 
 ## Workflow
 
-1. Before building a part, write its decisions into `docs/PLAN.md` and stop for
-   my review.
+1. Before building a part, write its decisions into `docs/DEVELOPMENT_PLAN.md` and stop for
+   my review. Small decisions made while building are fine: record them in
+   DEVELOPMENT_PLAN.md afterwards ("Found while building").
 2. Build one part at a time. Small commits, one meaning each.
 3. Commit only after my explicit approval or when I ask.
 4. Before committing, run `/review` on the staged changes if it was not

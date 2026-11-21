@@ -15,6 +15,10 @@ You check one invariant: **controllers read as the user story.**
   `git log`, `git show` and `git status`.
 - The rules come from `CLAUDE.md` at the repo root. Read the sections named
   below before reviewing; they are the source of truth, not this file.
+- Be fast. Run the diff command once, read only the changed files your
+  invariant applies to and the CLAUDE.md sections named below. Don't explore
+  the rest of the repo, don't re-check your own findings at length: report
+  as soon as your invariant is checked.
 
 Sections: **Architecture**, **Coding conventions** (routes, controllers,
 adapters).
@@ -30,6 +34,9 @@ Only `controller.ts` files in the diff (return `N/A` if there are none).
   type's namespace. Loops, string handling, SQL, HTML parsing or long
   conditionals inside a controller are findings.
 - Outcomes are returned as `venum` values for the route to `match`.
+- One step per line: every awaited result is stored in a named variable; no
+  `await` inside another call's arguments (`venum('ok', await x())`). Also
+  check the `routes.ts` next to each controller for the same rule.
 
 For each finding, name the lines that hurt readability and where they should
 move.

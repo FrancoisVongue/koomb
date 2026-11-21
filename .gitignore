@@ -11,3 +11,6 @@ dist/
 
 # Claude Code personal settings
 .claude/settings.local.json*
+
+# Local SQLite database
+backend/data/

@@ -21,6 +21,7 @@ In a single message, launch these six subagents, one call each:
 - Give each one the same prompt: the diff command from step 1, and
   "Review this diff for your invariant."
 - Do **not** pass a `model` override: each agent's definition pins its model.
+- Pass `effort: low`: the agents check one invariant each and should be quick.
 
 ## 3. Check the findings
 
