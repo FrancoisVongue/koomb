@@ -1,10 +1,11 @@
-# Plan
+# Development plan
 
 20 Nov 2026 · @Francois Vongue
 
-This is the plan for how the work will go. Decisions (stack, data model, slow
-pages, tests) are added step by step, each one **before** the part it concerns
-is implemented.
+This is the plan as it grew during development, starting from the simple
+plan in [PLAN.md](PLAN.md). Decisions (stack, data model, slow pages, tests)
+were added step by step, each one **before** the part it concerns was
+implemented; small decisions made while building were recorded afterwards.
 
 **How to read it:** each step lists its **decisions**; each decision has a
 *why* and, where relevant, a *trade-off*. Status is one of `done`,
@@ -347,8 +348,8 @@ Built in this order; each one ships with its unit tests.
 #### Local run (Docker)
 
 - **Decision:** Docker Compose for local testing only: one single-stage image
-  running the same two dev servers as `npm run dev` (frontend on :3033,
-  proxying `/api` to the backend on :3031), with the SQLite file in a volume.
+  running the same two dev servers as `npm run dev` (frontend on :3062,
+  proxying `/api` to the backend on :3061), with the SQLite file in a volume.
   - *Why:* run the app with only Docker installed; nothing to keep in sync
     with a production setup.
   - *Trade-off:* no hot reload in the container (the source is copied, not

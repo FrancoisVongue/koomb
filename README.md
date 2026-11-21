@@ -4,53 +4,88 @@ A web scraper: add a URL, the app scrapes the page in the background and stores
 every `<a>` link on it. The pages list shows each page's name, link count and
 status (in progress, done, failed), updated live.
 
-Requirements: [docs/TASK.md](docs/TASK.md). Decisions: [docs/PLAN.md](docs/PLAN.md).
-How AI was used: [AI_USAGE.md](AI_USAGE.md).
+- Requirements: [docs/TASK.md](docs/TASK.md)
+- First plan, written before any code: [docs/PLAN.md](docs/PLAN.md)
+- Decisions made during development: [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md)
+- How AI was used: [AI_USAGE.md](AI_USAGE.md)
 
-## Setup and run
+## Run the app
 
-You need **Node 22** (see `.nvmrc`).
+Pick one of the two ways. Both start the same thing.
+
+### Option 1: with npm
+
+You need **Node 22** (see `.nvmrc`). From the repo root:
 
 ```sh
 npm install
-npm run dev      # backend on :3031, frontend on :3033
+npm run dev
 ```
 
-Open **http://localhost:3033**. The Vite dev server proxies `/api/*` to the
-backend. The SQLite database is created on first start in
-`backend/data/koomb.db`, and migrations run automatically.
+Then open **http://localhost:3062**.
 
-Settings are optional: copy `backend/.env.example` to `backend/.env` to change
-them (`PORT`, `DATABASE_FILE`, `SCRAPE_DELAY_MS`).
+### Option 2: with Docker
 
-**Scraping is slowed down on purpose in development.** `npm run dev` waits
-3 seconds before fetching each page (`SCRAPE_DELAY_MS=3000`). Most pages are
-scraped in well under a second, so without the delay the "in progress" status
-is never visible. We decided to keep it that way. Set `SCRAPE_DELAY_MS=0` in
-`backend/.env` to turn it off; `npm start` and the tests don't use it.
-
-### With Docker (local testing only)
+You need Docker (or Podman). From the repo root:
 
 ```sh
-docker compose up --build   # same two dev servers; open http://localhost:3033
+docker compose up --build
 ```
 
-The SQLite database is kept in the `data` volume.
+Then open **http://localhost:3062**. Stop it with `Ctrl+C`, or
+`docker compose down`.
 
-## Tests and checks
+### Good to know
+
+- **Ports:** the frontend is on **3062** and the backend API on **3061**. The
+  frontend forwards every `/api` request to the backend.
+- **Database:** SQLite, created automatically on the first start
+  (`backend/data/koomb.db`, or a `data` volume with Docker). No setup needed.
+- **Scraping is slowed down on purpose:** `npm run dev` waits **3 seconds**
+  before fetching each page. Most pages are scraped in well under a second,
+  so without the delay you would never see the "in progress" status. We
+  decided to keep it that way.
+- **Settings are optional.** To change them, copy `backend/.env.example` to
+  `backend/.env` and edit it: `PORT`, `DATABASE_FILE`, and `SCRAPE_DELAY_MS`
+  (set it to `0` to turn the delay off).
+
+## Run the tests
+
+From the repo root:
 
 ```sh
-npm test            # Vitest, backend unit tests
-npm run typecheck   # tsc --noEmit in every workspace
-npm run lint        # Biome: lint + format check (warnings fail)
-npm run format      # Biome: format and apply safe fixes
+npm test
 ```
 
-Tests never touch the internet: the page fetcher is tested against a local
-HTTP server, routes through HTTP on a server started on a free port, and
-everything else with a container of fake services and in-memory SQLite. We
-test what can really break (link rules, link counts, claiming and retries,
-SSRF, the SSE stream), not what the types already guarantee.
+That runs the backend tests (Vitest). They never touch the internet: the page
+fetcher is tested against a local HTTP server, the API through HTTP on a
+temporary server, and everything else with fake services and an in-memory
+database. We test what can really break (link rules, link counts, claiming
+and retries, SSRF, the live updates), not what the types already guarantee.
+
+## All commands
+
+Run from the repo root.
+
+| Command | What it does |
+|---------|--------------|
+| `npm install` | Installs everything (all workspaces) |
+| `npm run dev` | Starts the backend (:3061) and the frontend (:3062) with live reload |
+| `npm test` | Runs the tests |
+| `npm run lint` | Checks lint and formatting (Biome); warnings fail |
+| `npm run format` | Formats the code and applies safe fixes |
+| `npm run typecheck` | Type-checks every workspace |
+| `npm run build` | Builds the frontend into `frontend/dist` |
+| `npm start` | Runs only the backend, without the dev delay |
+| `docker compose up --build` | Runs the app in Docker (same as `npm run dev`) |
+
+Try the API directly while the app runs:
+
+```sh
+curl -X POST localhost:3061/api/pages -H 'content-type: application/json' \
+  -d '{"url":"https://www.w3schools.com"}'
+curl 'localhost:3061/api/pages?page=1&pageSize=20'
+```
 
 ## How it works
 
@@ -122,9 +157,7 @@ The verification loop has two layers:
 - **SQLite and an in-process worker.** No database server or queue to
   install, and tests use in-memory databases. The cost: one process, one
   worker; SSE events also only work within that process. Postgres would mean
-  rewriting the Drizzle schema file.
-- **Unit tests only.** No e2e tests and no frontend tests; the full flow
-  (add URL → scrape → list) is checked by hand.
+  rewriting the Drizzle schema file. 
 - **No CI and no per-user pages.** Lint, typecheck and tests run locally (and
   in the Stop hook); every user sees every page.
 - **Basic SSRF protection.** Private and loopback addresses are rejected after

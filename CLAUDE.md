@@ -4,7 +4,7 @@
 
 Web scraper: a user submits a URL, the app scrapes the page in the background
 and stores every `<a>` link found on it. Requirements are in `docs/TASK.md`.
-Decisions are in `docs/PLAN.md`; it grows step by step, read it before starting
+Decisions are in `docs/DEVELOPMENT_PLAN.md`; it grows step by step, read it before starting
 a part.
 
 ## Architecture
@@ -30,7 +30,7 @@ a part.
   services once, in one typed container (`Services`), and passes it to both
   entrances, and from them to controllers. Nothing else imports or creates a
   service.
-- Stack and architecture decisions are recorded in `docs/PLAN.md`. Do not make
+- Stack and architecture decisions are recorded in `docs/DEVELOPMENT_PLAN.md`. Do not make
   new ones yourself.
 
 ## Folder map
@@ -57,8 +57,7 @@ backend/
     cron.ts               # entrance 2, time: runs the sweep every 10 s
     config.ts             # environment variables, parsed
     index.ts              # creates the Services container, starts both entrances
-e2e/                      # end-to-end tests (not used yet)
-docs/                     # TASK.md, PLAN.md, sessions/
+docs/                     # TASK.md, PLAN.md (first plan), DEVELOPMENT_PLAN.md (decisions), sessions/
 Dockerfile, compose.yaml  # local testing only (see README)
 README.md, AI_USAGE.md, biome.json, .nvmrc, .dockerignore
 ```
@@ -70,7 +69,7 @@ Run from the repo root.
 | Task        | Command |
 |-------------|---------|
 | Install     | `npm install` |
-| Run (dev)   | `npm run dev` (backend on :3031, frontend on :3033) |
+| Run (dev)   | `npm run dev` (backend on :3061, frontend on :3062) |
 | Test        | `npm test` (Vitest) |
 | Lint        | `npm run lint` (Biome: lint + format check) |
 | Format      | `npm run format` |
@@ -103,7 +102,7 @@ Run from the repo root.
 - Failures of the page being scraped (unreachable, timeout, bad status,
   non-HTML) are expected outcomes: return a venum and store the page as failed.
   Only our own infrastructure failures (DB down, bugs) are thrown. Refined in
-  `docs/PLAN.md` when the scraping part is planned.
+  `docs/DEVELOPMENT_PLAN.md` when the scraping part is planned.
 - Outside input (request body, query, fetched HTML) is parsed into a named type
   at the boundary. Models, DTOs and outcomes are named types, not inline shapes.
 - Pure functions (parsing, transforms) do no I/O. They are defined on types, in
@@ -145,15 +144,15 @@ Run from the repo root.
 - Routes are tested through HTTP, not by calling controllers.
 - Controllers and the worker are tested with a container of fake services.
   Substitute services through the container; no `vi.mock` of service modules.
-- End-to-end tests live in `e2e/`.
+- No end-to-end tests for now (see DEVELOPMENT_PLAN.md); they would go in `e2e/`.
 - Tests never touch the real internet: use HTML fixtures or a local server.
 - Tools are added here once chosen.
 
 ## Workflow
 
-1. Before building a part, write its decisions into `docs/PLAN.md` and stop for
+1. Before building a part, write its decisions into `docs/DEVELOPMENT_PLAN.md` and stop for
    my review. Small decisions made while building are fine: record them in
-   PLAN.md afterwards ("Found while building").
+   DEVELOPMENT_PLAN.md afterwards ("Found while building").
 2. Build one part at a time. Small commits, one meaning each.
 3. Commit only after my explicit approval or when I ask.
 4. Before committing, run `/review` on the staged changes if it was not
