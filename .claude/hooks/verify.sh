@@ -5,9 +5,11 @@ set -u
 cd "$CLAUDE_PROJECT_DIR" || exit 0
 
 # Claude is already continuing because of this hook: don't loop forever.
-if [ "$(jq -r '.stop_hook_active // false')" = "true" ]; then
-  exit 0
-fi
+# Plain text match on the hook input, so it works without jq.
+input=$(cat)
+case "$input" in
+  *'"stop_hook_active":true'* | *'"stop_hook_active": true'*) exit 0 ;;
+esac
 
 # Nothing changed: nothing to verify.
 if [ -z "$(git status --porcelain)" ]; then

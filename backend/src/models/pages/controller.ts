@@ -60,7 +60,7 @@ export const deletePage = async (services: Services, id: PageId) => {
 };
 
 /** Scrapes a page right after it was added. Skipped if the sweep took it first. */
-export const scrapePage = async (services: Services, pageId: number) => {
+export const scrapePage = async (services: Services, pageId: PageId) => {
   const now = services.clock.now();
   const page = await services.db.pages.claim(pageId, now);
   if (!page) {
@@ -78,8 +78,16 @@ export const sweep = async (services: Services) => {
   const requeued = await services.db.pages.requeueStuck(stuckBefore, now);
   const batch = await services.db.pages.claimQueued(Sweep.BATCH_SIZE, now);
 
-  const results = await Promise.all(batch.map((page) => scrape(services, page)));
+  // allSettled: one page failing (e.g. a database error) must not lose the others.
+  const settled = await Promise.allSettled(batch.map((page) => scrape(services, page)));
+  const errors = settled.flatMap((result) => (result.status === 'rejected' ? [result.reason] : []));
+  if (errors.length > 0) {
+    throw new AggregateError(errors, `Sweep: ${errors.length} page(s) failed to scrape`);
+  }
 
+  const results = settled.flatMap((result) =>
+    result.status === 'fulfilled' ? [result.value] : [],
+  );
   return venum('swept', { requeued, results });
 };
 

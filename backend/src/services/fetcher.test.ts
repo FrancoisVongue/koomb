@@ -17,6 +17,7 @@ beforeAll(async () => {
     else if (req.url === '/big')
       res.writeHead(200, { 'content-type': 'text/html' }).end('x'.repeat(5_000));
     else if (req.url === '/slow') setTimeout(() => res.end(HTML), 500);
+    else if (req.url === '/loop') res.writeHead(302, { location: '/loop' }).end();
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -41,6 +42,7 @@ describe('page fetcher', () => {
     expect((await fetcher.fetchPage(`${base}/json`)).tag).toBe('notHtml');
     expect((await fetcher.fetchPage(`${base}/big`)).tag).toBe('tooLarge');
     expect((await fetcher.fetchPage(`${base}/slow`)).tag).toBe('timeout');
+    expect((await fetcher.fetchPage(`${base}/loop`)).tag).toBe('tooManyRedirects');
     expect((await fetcher.fetchPage('http://127.0.0.1:1/')).tag).toBe('unreachable');
   });
 
@@ -49,6 +51,8 @@ describe('page fetcher', () => {
 
     expect((await strict.fetchPage(`${base}/ok`)).tag).toBe('blocked');
     expect((await strict.fetchPage('http://[::ffff:127.0.0.1]/')).tag).toBe('blocked');
+    // The address check resolves the host first: an unknown host is unreachable.
+    expect((await strict.fetchPage('http://no-such-host.invalid/')).tag).toBe('unreachable');
   });
 
   it('tells private addresses from public ones', () => {

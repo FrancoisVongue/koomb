@@ -134,16 +134,8 @@ export const createDatabase = (file: string) => {
         now: Date,
       ): Promise<Page.WithLinkCount | undefined> =>
         db.transaction((tx) => {
-          // Checked first: inserting links for a deleted page breaks the foreign key.
-          const existing = tx.select({ id: pages.id }).from(pages).where(eq(pages.id, id)).get();
-          if (!existing) return undefined;
-          tx.delete(links).where(eq(links.pageId, id)).run();
-          for (let i = 0; i < scraped.links.length; i += INSERT_CHUNK) {
-            const chunk = scraped.links.slice(i, i + INSERT_CHUNK);
-            tx.insert(links)
-              .values(chunk.map((link) => ({ pageId: id, ...link })))
-              .run();
-          }
+          // Marked done first: this also checks the page still exists before any
+          // link is written (links of a deleted page would break the foreign key).
           const page = tx
             .update(pages)
             .set({ status: 'done', title: scraped.title, error: null, updatedAt: now })
@@ -151,6 +143,14 @@ export const createDatabase = (file: string) => {
             .returning()
             .get();
           if (!page) return undefined;
+
+          tx.delete(links).where(eq(links.pageId, id)).run();
+          for (let i = 0; i < scraped.links.length; i += INSERT_CHUNK) {
+            const chunk = scraped.links.slice(i, i + INSERT_CHUNK);
+            tx.insert(links)
+              .values(chunk.map((link) => ({ pageId: id, ...link })))
+              .run();
+          }
           return { ...page, linkCount: scraped.links.length };
         }),
 
