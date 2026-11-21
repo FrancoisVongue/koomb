@@ -40,7 +40,7 @@ Sections: **Folder map**, **Coding conventions** (feature grouping), **Testing**
 - `shared/` holds only types used by **both** frontend and backend, plus their
   pure functions. Anything used by one side only does not belong there.
 - Unit tests sit next to the file they test (`*.test.ts`); there is no unit
-  test folder. End-to-end tests are in `e2e/`.
+  test folder. There are no end-to-end tests yet; they would go in `e2e/`.
 - New top-level folders or files not in the folder map are findings.
 
 ## Report format

@@ -1,6 +1,6 @@
 ---
 name: consistency-reviewer
-description: Checks that a diff doesn't contradict docs/PLAN.md decisions and covers the docs/TASK.md requirements it claims. Use from /review.
+description: Checks that a diff doesn't contradict docs/DEVELOPMENT_PLAN.md decisions and covers the docs/TASK.md requirements it claims. Use from /review.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -21,7 +21,7 @@ what it claims from the task.**
   the rest of the repo, don't re-check your own findings at length: report
   as soon as your invariant is checked.
 
-Also read `docs/TASK.md` (requirements) and `docs/PLAN.md` (decisions) in full.
+Also read `docs/TASK.md` (requirements) and `docs/DEVELOPMENT_PLAN.md` (decisions) in full.
 Sections of CLAUDE.md: **Workflow**, **Do not**.
 
 ## Check
@@ -32,15 +32,15 @@ while building"). That is allowed; never report it.
 
 Report only:
 
-- Code that **contradicts** a decision recorded in `docs/PLAN.md` (a different
+- Code that **contradicts** a decision recorded in `docs/DEVELOPMENT_PLAN.md` (a different
   tool, data model, status, pagination or error handling than the one
-  decided), unless PLAN.md was updated to the new choice.
+  decided), unless DEVELOPMENT_PLAN.md was updated to the new choice.
 - A **major** stack or architecture choice (a new framework, database, queue,
-  or architectural pattern) that PLAN.md doesn't mention at all, even
+  or architectural pattern) that DEVELOPMENT_PLAN.md doesn't mention at all, even
   afterwards. Small libraries and helpers are not findings.
 - A TASK.md requirement the diff claims to cover but doesn't (e.g. pagination
   on **both** lists, status visible in the pages list).
-- A PLAN.md status that is clearly wrong for what the diff delivers (a part
+- A DEVELOPMENT_PLAN.md status that is clearly wrong for what the diff delivers (a part
   marked `todo` that the diff completes).
 
 Do not report the order in which decisions and code were committed.

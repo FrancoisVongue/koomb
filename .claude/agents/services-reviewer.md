@@ -22,7 +22,7 @@ services.**
   as soon as your invariant is checked.
 
 Sections: **Architecture**, **Coding conventions**, **Testing**. Also the
-"Services and injection" decisions in `docs/PLAN.md`.
+"Services and injection" decisions in `docs/DEVELOPMENT_PLAN.md`.
 
 ## Check
 
