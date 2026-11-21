@@ -394,6 +394,10 @@ Built in this order; each one ships with its unit tests.
   quietly instead of throwing.
   - *Trade-off:* other open tabs don't refresh on a delete (no SSE event for
     it).
+- **Decision:** a redirect to an invalid URL is a failure outcome
+  (`badRedirect`), and the sweep fails a page stuck after its last attempt
+  instead of re-queuing it. Found by the final red-flag review: a scrape that
+  kept throwing could loop forever.
 - **Decision:** `npm run dev` waits 3 s before each page fetch
   (`SCRAPE_DELAY_MS`), on purpose, so the "in progress" status is visible;
   `npm start` and tests use 0. Kept that way.
