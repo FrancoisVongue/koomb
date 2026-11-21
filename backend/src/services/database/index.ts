@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Sqlite from 'better-sqlite3';
-import { and, count, desc, eq, getTableColumns, inArray, lt, sql } from 'drizzle-orm';
+import { and, count, desc, eq, getTableColumns, gte, inArray, lt, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { venum } from 'venum';
@@ -116,13 +116,29 @@ export const createDatabase = (file: string) => {
           .all();
       },
 
-      /** Puts pages that have been `processing` since before `before` back to `queued`. */
-      requeueStuck: async (before: Date, now: Date): Promise<number> =>
-        db
-          .update(pages)
-          .set({ status: 'queued', updatedAt: now })
-          .where(and(eq(pages.status, 'processing'), lt(pages.updatedAt, before)))
-          .run().changes,
+      /**
+       * Pages `processing` since before `before` go back to `queued`, or to
+       * `failed` once they have used all their attempts (so a scrape that keeps
+       * crashing can't loop forever). Returns how many were re-queued.
+       */
+      requeueStuck: async (before: Date, now: Date, maxAttempts: number): Promise<number> =>
+        db.transaction((tx) => {
+          const stuck = and(eq(pages.status, 'processing'), lt(pages.updatedAt, before));
+          tx.update(pages)
+            .set({
+              status: 'failed',
+              error: `Gave up after ${maxAttempts} attempts`,
+              updatedAt: now,
+            })
+            .where(and(stuck, gte(pages.attempts, maxAttempts)))
+            .run();
+          const requeued = tx
+            .update(pages)
+            .set({ status: 'queued', updatedAt: now })
+            .where(stuck)
+            .run();
+          return requeued.changes;
+        }),
 
       /**
        * Replaces the page's links and marks it `done`. Undefined if the page was

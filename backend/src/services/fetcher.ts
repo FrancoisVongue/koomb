@@ -61,6 +61,9 @@ const fetchPage = async (url: string, options: FetcherOptions) => {
     const location = res.headers.get('location');
     if (res.status >= 300 && res.status < 400 && location !== null) {
       await res.body?.cancel();
+      if (!URL.canParse(location, current)) {
+        return venum('badRedirect', { location });
+      }
       current = new URL(location, current).toString();
       continue;
     }

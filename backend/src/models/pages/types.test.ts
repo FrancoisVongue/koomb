@@ -28,6 +28,7 @@ describe('Pagination.parse', () => {
     expect(Pagination.parse({ page: '0' }).tag).toBe('invalid');
     expect(Pagination.parse({ page: '1.5' }).tag).toBe('invalid');
     expect(Pagination.parse({ pageSize: '101' }).tag).toBe('invalid');
+    expect(Pagination.parse({ page: '99999999999999999999999' }).tag).toBe('invalid');
   });
 });
 
